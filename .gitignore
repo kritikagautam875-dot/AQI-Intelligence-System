@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# MLflow
+mlflow.db
+mlruns/
+
+# Dataset
+city_day.csv
+
+# Trained model
+final_aqi_rf_pipeline.pkl

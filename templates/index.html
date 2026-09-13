@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AQI Intelligence System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 40px auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin-bottom: 8px;
+            color: #1f2937;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 11px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        button {
+            padding: 13px 35px;
+            border: none;
+            border-radius: 7px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #result {
+            display: none;
+            margin-top: 25px;
+            padding: 25px;
+            background: #eef6ff;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        #result h2 {
+            margin-bottom: 10px;
+        }
+
+        #aqiValue {
+            font-size: 40px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        #error {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #ffe5e5;
+            color: #b91c1c;
+            border-radius: 7px;
+        }
+
+        @media (max-width: 700px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>AQI Intelligence System</h1>
+        <p>Air Quality Index Prediction using Machine Learning</p>
+    </div>
+
+    <div class="form-container">
+
+        <form id="aqiForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="City" placeholder="Enter city" required>
+                </div>
+
+                <div class="form-group">
+                    <label>PM2.5</label>
+                    <input type="number" step="any" id="PM25" required>
+                </div>
+
+                <div class="form-group">
+                    <label>PM10</label>
+                    <input type="number" step="any" id="PM10" required>
+                </div>
+
+                <div class="form-group">
+                    <label>NO</label>
+                    <input type="number" step="any" id="NO" required>
+                </div>
+
+                <div class="form-group">
+                    <label>NO2</label>
+                    <input type="number" step="any" id="NO2" required>
+                </div>
+
+                <div class="form-group">
+                    <label>NOx</label>
+                    <input type="number" step="any" id="NOx" required>
+                </div>
+
+                <div class="form-group">
+                    <label>NH3</label>
+                    <input type="number" step="any" id="NH3" required>
+                </div>
+
+                <div class="form-group">
+                    <label>CO</label>
+                    <input type="number" step="any" id="CO" required>
+                </div>
+
+                <div class="form-group">
+                    <label>SO2</label>
+                    <input type="number" step="any" id="SO2" required>
+                </div>
+
+                <div class="form-group">
+                    <label>O3</label>
+                    <input type="number" step="any" id="O3" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Benzene</label>
+                    <input type="number" step="any" id="Benzene" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Toluene</label>
+                    <input type="number" step="any" id="Toluene" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Xylene</label>
+                    <input type="number" step="any" id="Xylene" required>
+                </div>
+
+            </div>
+
+            <div class="button-container">
+                <button type="submit">Predict AQI</button>
+            </div>
+
+        </form>
+
+        <div id="error"></div>
+
+        <div id="result">
+            <h2>Predicted AQI</h2>
+            <div id="aqiValue"></div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+document.getElementById("aqiForm").addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const data = {
+
+        "City": document.getElementById("City").value,
+
+        "PM2.5": parseFloat(document.getElementById("PM25").value),
+        "PM10": parseFloat(document.getElementById("PM10").value),
+        "NO": parseFloat(document.getElementById("NO").value),
+        "NO2": parseFloat(document.getElementById("NO2").value),
+        "NOx": parseFloat(document.getElementById("NOx").value),
+        "NH3": parseFloat(document.getElementById("NH3").value),
+        "CO": parseFloat(document.getElementById("CO").value),
+        "SO2": parseFloat(document.getElementById("SO2").value),
+        "O3": parseFloat(document.getElementById("O3").value),
+        "Benzene": parseFloat(document.getElementById("Benzene").value),
+        "Toluene": parseFloat(document.getElementById("Toluene").value),
+        "Xylene": parseFloat(document.getElementById("Xylene").value)
+
+    };
+
+
+    try {
+
+        const response = await fetch("/predict", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(data)
+
+        });
+
+
+        const result = await response.json();
+
+
+        if (response.ok) {
+
+            document.getElementById("result").style.display = "block";
+
+            document.getElementById("aqiValue").textContent =
+                result.predicted_AQI;
+
+            document.getElementById("error").style.display = "none";
+
+        } else {
+
+            document.getElementById("error").style.display = "block";
+
+            document.getElementById("error").textContent =
+                result.error || "Prediction failed.";
+
+            document.getElementById("result").style.display = "none";
+        }
+
+
+    } catch (error) {
+
+        document.getElementById("error").style.display = "block";
+
+        document.getElementById("error").textContent =
+            "Unable to connect to Flask API.";
+
+        document.getElementById("result").style.display = "none";
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
