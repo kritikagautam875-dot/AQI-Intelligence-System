@@ -11,4 +11,4 @@ mlruns/
 city_day.csv
 
 # Trained model
-final_aqi_rf_pipeline.pkl
+# Model is tracked using Git LFS
