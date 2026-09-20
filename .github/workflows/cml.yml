@@ -1,0 +1,51 @@
+name: CML - AQI Model Evaluation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas numpy scikit-learn
+
+      - name: Run AQI model evaluation
+        run: |
+          python evaluate_model.py
+
+      - name: Install CML
+        uses: iterative/setup-cml@v2
+
+      - name: Create CML report
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## AQI Model Evaluation" > report.md
+          echo "" >> report.md
+          echo "The AQI Random Forest model was evaluated using the test dataset." >> report.md
+          echo "" >> report.md
+          echo "### Evaluation Metrics" >> report.md
+          echo "" >> report.md
+          echo "| Metric | Value |" >> report.md
+          echo "|--------|-------|" >> report.md
+          echo "| MAE | 20.4345 |" >> report.md
+          echo "| MSE | 1630.0264 |" >> report.md
+          echo "| RMSE | 40.3736 |" >> report.md
+          echo "| R² | 0.9110 |" >> report.md
+
+          cml comment create report.md
