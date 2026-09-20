@@ -24,6 +24,14 @@ jobs:
           pip install --upgrade pip
           pip install pandas numpy scikit-learn
 
+      - name: Check repository files
+        run: |
+          pwd
+          ls -la
+          echo "Checking evaluate_model.py..."
+          ls -l evaluate_model.py
+          
+
       - name: Run AQI model evaluation
         run: |
           python evaluate_model.py
