@@ -1,10 +1,12 @@
 name: CML - AQI Model Evaluation
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   evaluate:
@@ -30,11 +32,19 @@ jobs:
           ls -la
           echo "Checking evaluate_model.py..."
           ls -l evaluate_model.py
-          
+          echo "Checking city_day.csv..."
+          ls -lh city_day.csv
 
       - name: Run AQI model evaluation
         run: |
           python evaluate_model.py
+
+      - name: Check generated metrics
+        run: |
+          echo "Checking metrics.txt..."
+          ls -lh metrics.txt
+          echo "----- METRICS -----"
+          cat metrics.txt
 
       - name: Install CML
         uses: iterative/setup-cml@v2
@@ -49,11 +59,13 @@ jobs:
           echo "" >> report.md
           echo "### Evaluation Metrics" >> report.md
           echo "" >> report.md
-          echo "| Metric | Value |" >> report.md
-          echo "|--------|-------|" >> report.md
-          echo "| MAE | 20.4345 |" >> report.md
-          echo "| MSE | 1630.0264 |" >> report.md
-          echo "| RMSE | 40.3736 |" >> report.md
-          echo "| R² | 0.9110 |" >> report.md
+
+          cat metrics.txt >> report.md
+
+          echo "" >> report.md
+          echo "Evaluation completed successfully." >> report.md
+
+          echo "----- CML REPORT -----"
+          cat report.md
 
           cml comment create report.md
