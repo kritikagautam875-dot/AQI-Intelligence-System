@@ -5,7 +5,7 @@ import joblib
 app = Flask(__name__)
 
 # Load the trained AQI model
-model = joblib.load("final_aqi_rf_pipeline.pkl")
+model = joblib.load("model/final_aqi_rf_pipeline.pkl")
 
 # Features required by the model
 REQUIRED_FEATURES = [
