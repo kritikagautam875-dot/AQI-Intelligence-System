@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.git/
+.github/
+mlruns/
+*.ipynb
+*.csv
+*.db
+metrics.txt
+tests/
+fastapi_app.py
