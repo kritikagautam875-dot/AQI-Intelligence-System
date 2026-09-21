@@ -23,15 +23,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install pandas numpy scikit-learn
 
       - name: Check repository files
         run: |
           pwd
           ls -la
+
           echo "Checking evaluate_model.py..."
           ls -l evaluate_model.py
+
           echo "Checking city_day.csv..."
           ls -lh city_day.csv
 
@@ -43,29 +45,100 @@ jobs:
         run: |
           echo "Checking metrics.txt..."
           ls -lh metrics.txt
+
           echo "----- METRICS -----"
           cat metrics.txt
+
+      # -----------------------------
+      # DOCKER
+      # -----------------------------
+
+      - name: Build Docker image
+        run: |
+          docker build -t aqi-api .
+
+      - name: Run Docker container
+        run: |
+          docker run -d \
+            --name aqi-container \
+            -p 5000:5000 \
+            aqi-api
+
+          echo "Waiting for container..."
+          sleep 10
+
+          echo "----- CONTAINER STATUS -----"
+          docker ps -a
+
+      - name: Test Docker API
+        run: |
+          echo "Testing AQI API..."
+
+          curl --fail http://localhost:5000/ || true
+
+      - name: Show Docker logs
+        if: always()
+        run: |
+          echo "================================"
+          echo "        DOCKER LOGS"
+          echo "================================"
+
+          docker logs aqi-container 2>&1 || true
+
+      # -----------------------------
+      # CML
+      # -----------------------------
 
       - name: Install CML
         uses: iterative/setup-cml@v2
 
       - name: Create CML report
+        if: always()
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "## AQI Model Evaluation" > report.md
           echo "" >> report.md
+
           echo "The AQI Random Forest model was evaluated using the test dataset." >> report.md
           echo "" >> report.md
+
           echo "### Evaluation Metrics" >> report.md
           echo "" >> report.md
 
-          cat metrics.txt >> report.md
+          if [ -f metrics.txt ]; then
+            cat metrics.txt >> report.md
+          else
+            echo "Metrics file was not generated." >> report.md
+          fi
 
           echo "" >> report.md
-          echo "Evaluation completed successfully." >> report.md
+          echo "### Docker Logs" >> report.md
+          echo "" >> report.md
+          echo '```text' >> report.md
 
-          echo "----- CML REPORT -----"
+          if docker ps -a --format '{{.Names}}' | grep -q '^aqi-container$'; then
+            docker logs aqi-container 2>&1 >> report.md || true
+          else
+            echo "Docker container was not created." >> report.md
+          fi
+
+          echo '```' >> report.md
+
+          echo "" >> report.md
+          echo "### Docker Container Status" >> report.md
+          echo "" >> report.md
+          echo '```text' >> report.md
+          docker ps -a >> report.md || true
+          echo '```' >> report.md
+
+          echo "" >> report.md
+          echo "Evaluation completed." >> report.md
+
+          echo "================================"
+          echo "        CML REPORT"
+          echo "================================"
+
           cat report.md
 
           cml comment create report.md
