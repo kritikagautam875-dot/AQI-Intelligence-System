@@ -10,6 +10,6 @@ COPY app.py .
 COPY templates ./templates
 COPY model ./model
 
-EXPOSE 5000
+EXPOSE 10000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-10000} app:app"]
