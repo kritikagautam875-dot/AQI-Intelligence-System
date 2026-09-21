@@ -115,22 +115,51 @@ jobs:
       # -----------------------------
 
       - name: Create CML report
+        if: always()
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "## AQI Model Evaluation" > report.md
-          echo "" >> report.md
-          echo "The AQI Random Forest model was evaluated using the test dataset." >> report.md
-          echo "" >> report.md
-          echo "### Evaluation Metrics" >> report.md
+          echo "# AQI Model Evaluation" > report.md
           echo "" >> report.md
 
-          cat metrics.txt >> report.md
+          echo "## Metrics" >> report.md
+          echo "" >> report.md
+
+          if [ -f metrics.txt ]; then
+            cat metrics.txt >> report.md
+          else
+            echo "Metrics file was not generated." >> report.md
+          fi
 
           echo "" >> report.md
-          echo "Evaluation completed successfully." >> report.md
 
-          echo "----- CML REPORT -----"
+          echo "## Docker Logs" >> report.md
+          echo "" >> report.md
+
+          echo '```text' >> report.md
+
+          docker logs aqi-container 2>&1 >> report.md || \
+            echo "Docker container not available." >> report.md
+
+          echo '```' >> report.md
+
+          echo "" >> report.md
+
+          echo "Evaluation was executed automatically by GitHub Actions using \`evaluate_model.py\`." >> report.md
+
+          echo ""
+          echo "================================"
+          echo "       FINAL CML REPORT"
+          echo "================================"
+
           cat report.md
 
-          cml comment create report.md
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          curl -L \
+            -X POST \
+            -H "Authorization: Bearer $REPO_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+            -d "$(python -c 'import json; print(json.dumps({"body": open("report.md").read()}))')"
