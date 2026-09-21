@@ -10,5 +10,8 @@ mlruns/
 # Dataset
 city_day.csv
 
+# CML generated metrics
+metrics.txt
+
 # Trained model
 # Model is tracked using Git LFS
