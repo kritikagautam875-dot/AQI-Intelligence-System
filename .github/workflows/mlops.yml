@@ -36,9 +36,9 @@ jobs:
           pip install pytest
 
       - name: Set up CML
-        uses: iterative/setup-cml@v1
+        uses: iterative/setup-cml@v2
         with : 
-           vegas: false
+           vega: false
 
       - name: Check Python syntax
         run: |
