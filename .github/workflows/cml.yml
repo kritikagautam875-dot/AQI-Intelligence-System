@@ -73,7 +73,6 @@ jobs:
       - name: Test Docker API
         run: |
           echo "Testing AQI API..."
-
           curl --fail http://localhost:5000/ || true
 
       - name: Show Docker logs
@@ -109,6 +108,20 @@ jobs:
       - name: Install CML
         uses: iterative/setup-cml@v2
 
+      - name: Check GitHub token permissions
+        run: |
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Event: $GITHUB_EVENT_NAME"
+          echo "Ref: $GITHUB_REF"
+
+          curl -s \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY" \
+            | python -c "import sys,json; d=json.load(sys.stdin); print('Repository permissions:', d.get('permissions'))"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create CML report
         if: always()
         env:
@@ -117,10 +130,7 @@ jobs:
           echo "## AQI Model Evaluation" > report.md
           echo "" >> report.md
 
-          echo "The AQI Random Forest model was evaluated using the test dataset." >> report.md
-          echo "" >> report.md
-
-          echo "### Evaluation Metrics" >> report.md
+          echo "### Metrics" >> report.md
           echo "" >> report.md
 
           if [ -f metrics.txt ]; then
@@ -134,28 +144,14 @@ jobs:
           echo "" >> report.md
           echo '```text' >> report.md
 
-          if docker ps -a --format '{{.Names}}' | grep -q '^aqi-container$'; then
-            docker logs aqi-container 2>&1 >> report.md || true
-          else
-            echo "Docker container was not created." >> report.md
-          fi
+          docker logs aqi-container 2>&1 || echo "Docker container not available."
 
           echo '```' >> report.md
 
           echo "" >> report.md
-          echo "### Docker Container Status" >> report.md
-          echo "" >> report.md
-          echo '```text' >> report.md
-          docker ps -a >> report.md || true
-          echo '```' >> report.md
+          echo "Evaluation was executed automatically by GitHub Actions." >> report.md
 
-          echo "" >> report.md
-          echo "Evaluation completed." >> report.md
-
-          echo "================================"
-          echo "        CML REPORT"
-          echo "================================"
-
+          echo "----- FINAL CML REPORT -----"
           cat report.md
 
           cml comment create report.md
