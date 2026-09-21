@@ -37,6 +37,8 @@ jobs:
 
       - name: Set up CML
         uses: iterative/setup-cml@v1
+        with : 
+           vegas: false
 
       - name: Check Python syntax
         run: |
