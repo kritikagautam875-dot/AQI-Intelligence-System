@@ -13,8 +13,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # -----------------------------
+      # CHECKOUT
+      # -----------------------------
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # -----------------------------
+      # PYTHON SETUP
+      # -----------------------------
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,6 +34,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pandas numpy scikit-learn
+
+      # -----------------------------
+      # CHECK FILES
+      # -----------------------------
 
       - name: Check repository files
         run: |
@@ -37,6 +50,10 @@ jobs:
           echo "Checking city_day.csv..."
           ls -lh city_day.csv
 
+      # -----------------------------
+      # MODEL EVALUATION
+      # -----------------------------
+
       - name: Run AQI model evaluation
         run: |
           python evaluate_model.py
@@ -44,6 +61,7 @@ jobs:
       - name: Check generated metrics
         run: |
           echo "Checking metrics.txt..."
+
           ls -lh metrics.txt
 
           echo "----- METRICS -----"
@@ -73,6 +91,7 @@ jobs:
       - name: Test Docker API
         run: |
           echo "Testing AQI API..."
+
           curl --fail http://localhost:5000/ || true
 
       - name: Show Docker logs
@@ -83,7 +102,11 @@ jobs:
           echo "================================"
 
           docker logs aqi-container 2>&1 || true
-      
+
+      # -----------------------------
+      # CHECK GITHUB TOKEN PERMISSIONS
+      # -----------------------------
+
       - name: Check GitHub Actions permissions
         run: |
           echo "Repository: $GITHUB_REPOSITORY"
@@ -96,7 +119,7 @@ jobs:
           curl -s \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/$GITHUB_REPOSITORY \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY" \
             | python -c "import sys,json; d=json.load(sys.stdin); print('Repository:', d.get('full_name')); print('Permissions:', d.get('permissions'))"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -107,6 +130,10 @@ jobs:
 
       - name: Install CML
         uses: iterative/setup-cml@v2
+
+      # -----------------------------
+      # CML TOKEN CHECK
+      # -----------------------------
 
       - name: Check GitHub token permissions
         run: |
@@ -122,15 +149,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # -----------------------------
+      # CREATE CML REPORT
+      # -----------------------------
+
       - name: Create CML report
         if: always()
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "## AQI Model Evaluation" > report.md
+          echo "# AQI Model Evaluation" > report.md
           echo "" >> report.md
 
-          echo "### Metrics" >> report.md
+          echo "## Metrics" >> report.md
           echo "" >> report.md
 
           if [ -f metrics.txt ]; then
@@ -140,18 +171,26 @@ jobs:
           fi
 
           echo "" >> report.md
-          echo "### Docker Logs" >> report.md
+
+          echo "## Docker Logs" >> report.md
           echo "" >> report.md
+
           echo '```text' >> report.md
 
-          docker logs aqi-container 2>&1 || echo "Docker container not available."
+          docker logs aqi-container 2>&1 >> report.md || \
+            echo "Docker container not available." >> report.md
 
           echo '```' >> report.md
 
           echo "" >> report.md
-          echo "Evaluation was executed automatically by GitHub Actions." >> report.md
 
-          echo "----- FINAL CML REPORT -----"
+          echo "Evaluation was executed automatically by GitHub Actions using \`evaluate_model.py\`." >> report.md
+
+          echo ""
+          echo "================================"
+          echo "       FINAL CML REPORT"
+          echo "================================"
+
           cat report.md
 
           cml comment create report.md
