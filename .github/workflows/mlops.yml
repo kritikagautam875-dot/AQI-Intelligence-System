@@ -19,15 +19,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # -----------------------------
+      # CHECKOUT
+      # -----------------------------
+
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           lfs: true
 
+      # -----------------------------
+      # PYTHON SETUP
+      # -----------------------------
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      # -----------------------------
+      # INSTALL DEPENDENCIES
+      # -----------------------------
 
       - name: Install dependencies
         run: |
@@ -35,43 +48,72 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
+      # -----------------------------
+      # PYTHON SYNTAX
+      # -----------------------------
 
       - name: Check Python syntax
         run: |
           python -m py_compile app.py
           python -m py_compile evaluate_model.py
 
+      # -----------------------------
+      # CHECK DATASET
+      # -----------------------------
+
       - name: Check dataset
         run: |
           test -f city_day.csv
           ls -lh city_day.csv
+
+      # -----------------------------
+      # CHECK MODEL
+      # -----------------------------
 
       - name: Check model file
         run: |
           test -f model/final_aqi_rf_pipeline.pkl
           ls -lh model/final_aqi_rf_pipeline.pkl
 
+      # -----------------------------
+      # ML EVALUATION
+      # -----------------------------
+
       - name: Run ML evaluation
         run: |
           python evaluate_model.py
 
-
+      # -----------------------------
+      # PYTEST
+      # -----------------------------
 
       - name: Run tests
         run: |
           pytest
 
+      # -----------------------------
+      # DOCKER BUILD
+      # -----------------------------
+
       - name: Build Docker image
         run: |
           docker build -t aqi-api:ci .
+
+      # -----------------------------
+      # DOCKER RUN
+      # -----------------------------
 
       - name: Run Docker container
         run: |
           docker run -d \
             --name aqi-container-test \
-            -e PORT=5000
+            -e PORT=5000 \
             -p 5000:5000 \
             aqi-api:ci
+
+      # -----------------------------
+      # WAIT FOR API
+      # -----------------------------
 
       - name: Wait for Docker API
         run: |
@@ -88,8 +130,18 @@ jobs:
           done
 
           echo "AQI API failed to start."
-          docker logs aqi-container-test
+
+          echo "----- DOCKER STATUS -----"
+          docker ps -a
+
+          echo "----- DOCKER LOGS -----"
+          docker logs aqi-container-test 2>&1 || true
+
           exit 1
+
+      # -----------------------------
+      # TEST PREDICTION API
+      # -----------------------------
 
       - name: Test Docker prediction API
         run: |
@@ -117,10 +169,22 @@ jobs:
 
           echo "$response" | grep -q "predicted_AQI"
 
+      # -----------------------------
+      # DOCKER LOGS
+      # -----------------------------
+
       - name: Show Docker logs
         if: always()
         run: |
-          docker logs aqi-container-test
+          echo "================================"
+          echo "        DOCKER LOGS"
+          echo "================================"
+
+          docker logs aqi-container-test 2>&1 || true
+
+      # -----------------------------
+      # STOP CONTAINER
+      # -----------------------------
 
       - name: Stop Docker container
         if: always()
