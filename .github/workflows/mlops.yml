@@ -35,10 +35,6 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Set up CML
-        uses: iterative/setup-cml@v2
-        with : 
-           vega: false
 
       - name: Check Python syntax
         run: |
@@ -59,20 +55,7 @@ jobs:
         run: |
           python evaluate_model.py
 
-      - name: Create CML report
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "# AQI Model Evaluation" > report.md
-          echo "" >> report.md
-          echo "## Metrics" >> report.md
-          cat metrics.txt >> report.md
-          echo "" >> report.md
-          echo "Evaluation was executed automatically by GitHub Actions using \`evaluate_model.py\`." >> report.md
 
-          cat report.md
-
-          cml comment create report.md
 
       - name: Run tests
         run: |
@@ -86,6 +69,7 @@ jobs:
         run: |
           docker run -d \
             --name aqi-container-test \
+            -e PORT=5000
             -p 5000:5000 \
             aqi-api:ci
 
